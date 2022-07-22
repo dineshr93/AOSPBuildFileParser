@@ -7,11 +7,21 @@ import (
 )
 
 // mkparser "AOSPBuildFileParser/androidmk/parser"
+// set GOOS=linux
+// set GOOS=windows
+// set GOARCH=amd64 go build
 
 func main() {
 
-	keyName := "srcs"
-	filename := "D:/Android.bp"
+	var keyName, filename string
+	if len(os.Args) == 3 {
+		filename = os.Args[1]
+		keyName = os.Args[2]
+	} else {
+		fmt.Println("aospparse.exe filename Keyname")
+		fmt.Println("./aospparse filename Keyname")
+		os.Exit(1)
+	}
 	a, b := GetValueFromBP(filename, keyName)
 	_ = a
 	if b != nil {

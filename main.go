@@ -30,7 +30,7 @@ func main() {
 		}
 	} else {
 		fmt.Println(a)
-		fmt.Println("b is nil")
+		fmt.Println("list is nil")
 	}
 	// b, err := ioutil.ReadFile("Android.mk")
 	// if err != nil {
@@ -119,9 +119,11 @@ func GetValueFromBP(filename string, keyName string) (string, []string) {
 	// start of the functionality
 	for n, def := range file.Defs {
 		_ = n
+
 		switch def.(type) {
 		case *bkparser.Module:
 			m := def.(*bkparser.Module)
+			fmt.Println("Type is ", m.Type)
 			// fmt.Println("===============================")
 			// fmt.Println(n+1, "Cheking value for key", keyName, " in pkg definition", m.Type)
 			// fmt.Println("===============================")
@@ -129,6 +131,7 @@ func GetValueFromBP(filename string, keyName string) (string, []string) {
 			p, found := m.GetProperty(keyName)
 			if found {
 				expValue := (*p).Value
+				fmt.Println("expType is ", expValue.Type())
 
 				switch v := expValue.(type) {
 				// Value is of string type
@@ -158,7 +161,23 @@ func GetValueFromBP(filename string, keyName string) (string, []string) {
 
 		case *bkparser.Assignment:
 			a := def.(*bkparser.Assignment)
-			fmt.Println(a.Value.String())
+			// fmt.Println(a.Name)
+			if a.Name == keyName {
+				v, ok := a.Value.(*bkparser.List)
+				// fmt.Println(v.Type())
+				if ok {
+					results := make([]string, 0)
+					for _, v := range v.Values {
+						v := v.(*bkparser.String)
+						// fmt.Println(v.Value)
+						results = append(results, v.Value)
+					}
+					if len(results) > 0 {
+						return "", results
+					}
+				}
+			}
+
 		// here v has type S
 		default:
 			fmt.Println("New Definition interface implementation Type")

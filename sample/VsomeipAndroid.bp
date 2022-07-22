@@ -158,7 +158,7 @@ cc_library_shared {
 
     shared_libs: [
         "libvsomeip3",
-	"liblog",
+	    "liblog",
         "libboost_thread"
     ]
 }

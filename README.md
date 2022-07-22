@@ -1,5 +1,6 @@
 # AOSPBuildFileParser
 
+This is a parser for .bp and .mk file
 
 ```
 import (
@@ -9,6 +10,8 @@ mkparser "AOSPBuildFileParser/androidmk/parser"
 ```
 
 
-The Parsers are taken from Soong build system in the AOSP and are available under Apache-2.0 License
+The Core Parsers are taken from Soong build system in the AOSP and are available under Apache-2.0 License to reuse and modify.
+
+This repo is for tracing the Suppliers code specific AOSP dependencies for OSS compliance activity
 
 

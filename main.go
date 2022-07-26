@@ -190,7 +190,19 @@ func GetValueFromBP(filename string, keyName string) (string, []string) {
 
 	}
 	if len(result) > 0 {
-		return "", result
+		return "", unique(result)
 	}
 	return "", nil
+}
+
+func unique(s []string) []string {
+	inResult := make(map[string]bool)
+	var result []string
+	for _, str := range s {
+		if _, ok := inResult[str]; !ok {
+			inResult[str] = true
+			result = append(result, str)
+		}
+	}
+	return result
 }

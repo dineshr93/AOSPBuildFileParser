@@ -10,6 +10,7 @@ import (
 // set GOOS=linux
 // set GOOS=windows
 // set GOARCH=amd64 go build
+// go build -o aospparse.exe
 
 func main() {
 
@@ -116,6 +117,8 @@ func GetValueFromBP(filename string, keyName string) (string, []string) {
 		fmt.Printf("%d parsing errors \n", len(errs))
 	}
 
+	result := make([]string, 0)
+
 	// start of the functionality
 	for n, def := range file.Defs {
 		_ = n
@@ -123,7 +126,7 @@ func GetValueFromBP(filename string, keyName string) (string, []string) {
 		switch def.(type) {
 		case *bkparser.Module:
 			m := def.(*bkparser.Module)
-			fmt.Println("Type is ", m.Type)
+			// fmt.Println("Type is ", m.Type)
 			// fmt.Println("===============================")
 			// fmt.Println(n+1, "Cheking value for key", keyName, " in pkg definition", m.Type)
 			// fmt.Println("===============================")
@@ -131,30 +134,32 @@ func GetValueFromBP(filename string, keyName string) (string, []string) {
 			p, found := m.GetProperty(keyName)
 			if found {
 				expValue := (*p).Value
-				fmt.Println("expType is ", expValue.Type())
+				// fmt.Println("expType is ", expValue.Type())
 
 				switch v := expValue.(type) {
 				// Value is of string type
 				case *bkparser.String:
 					// fmt.Println(v.Value)
-					return v.Value, nil
+					result = append(result, v.Value)
+					// return "", result
 				// Value is of list type
 				case *bkparser.List:
 					items := expValue.(*bkparser.List)
-					results := make([]string, 0)
+					// results := make([]string, 0)
 					for _, item := range items.Values {
 						v := item.(*bkparser.String)
 
 						// fmt.Println(v.Value)
-						results = append(results, v.Value)
+						result = append(result, v.Value)
 
 					}
-					if len(results) > 0 {
-						return "", results
-					}
+					// if len(result) > 0 {
+					// 	return "", result
+					// }
 				default:
 					fmt.Println("Add case for new value type inside definition of type *bkparser.Module")
 				}
+
 			} else {
 				// fmt.Println("Key not found")
 			}
@@ -182,6 +187,10 @@ func GetValueFromBP(filename string, keyName string) (string, []string) {
 		default:
 			fmt.Println("New Definition interface implementation Type")
 		}
+
+	}
+	if len(result) > 0 {
+		return "", result
 	}
 	return "", nil
 }

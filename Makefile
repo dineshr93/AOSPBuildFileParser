@@ -37,5 +37,6 @@ all: clean build test
 git:
 	git status
 	git add .
+	git status
 	git commit -m ${m}
 	git push

@@ -23,10 +23,8 @@ aospparse.exe path/to/Android.bp keyName_in_Android.bp
 
 
 for ex: aospparse.exe Android.bp deps
-api_surface.go
-export.go
-metadata.go
-import.go
+aospparse.exe
+sample/Android.bp deps
 
 ```
 

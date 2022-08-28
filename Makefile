@@ -34,8 +34,7 @@ clean:
 
 all: clean build test
 .DEFAULT_GOAL := all
-
 git:
 	git add .
-	git commit -m ${msg}
+	git commit -m ${m}
 	git push

@@ -20,7 +20,11 @@ build:
 	echo "Compiling for every OS and Platform"
 	set GOOS=linux
 	set GOARCH=arm64
-	go build -o ${BIN}/${EXE_NAME} main.go
+	go build -o ${BIN}/${EXE_NAME}-arm64 main.go
+	echo "amd64"
+	set GOOS=linux
+	set GOARCH=amd64
+	go build -o ${BIN}/${EXE_NAME}-amd64 main.go
 	set GOOS=windows
 	set GOARCH=arm64
 	go build -o ${BIN}/${EXE_NAME}.exe main.go

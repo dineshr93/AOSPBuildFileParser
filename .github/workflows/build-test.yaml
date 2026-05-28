@@ -29,5 +29,15 @@ jobs:
           ls -la
           echo "=== go.sum exists? ==="
           test -f go.sum && echo "go.sum exists" || echo "go.sum NOT found"
-          echo "=== go build -n (dry run) ==="
-          go build -n -o aospparse-test .
+
+      - name: Try go build with verbose output
+        run: |
+          echo "=== Attempting go build ==="
+          go build -v -x -o aospparse-test . 2>&1 || {
+            echo "Build failed with exit code: $?"
+            exit 1
+          }
+
+      - name: Verify binary
+        run: |
+          ls -la aospparse-test

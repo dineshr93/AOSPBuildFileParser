@@ -22,8 +22,16 @@ jobs:
 
       - name: Run tests
         run: |
+          echo "=== Go Environment ==="
+          go version
+          echo "=== Go Environment Variables ==="
+          go env
+          echo "=== Running go mod tidy ==="
           go mod tidy
-          go test ./... -v
+          echo "=== Running go mod verify ==="
+          go mod verify
+          echo "=== Running tests ==="
+          go test ./... -v -race -timeout=5m
 
       - name: Build binaries for all platforms
         run: |

@@ -120,16 +120,13 @@ jobs:
           ./aospparse paths module_registry.json libvsomeip3
           \`\`\`
           
-          ## Downloads
-          
-          | Platform | Architecture | Binary |
-          |----------|--------------|--------|
-          | Linux | AMD64 | aospparse-linux-amd64 |
-          | Linux | ARM64 | aospparse-linux-arm64 |
-          | macOS | AMD64 | aospparse-darwin-amd64 |
-          | macOS | ARM64 | aospparse-darwin-arm64 |
-          | Windows | AMD64 | aospparse-windows-amd64.exe |
-          | Windows | ARM64 | aospparse-windows-arm64.exe |
+          echo "=== Downloads ===" >> RELEASE_NOTES.md
+          echo "Linux AMD64: aospparse-linux-amd64" >> RELEASE_NOTES.md
+          echo "Linux ARM64: aospparse-linux-arm64" >> RELEASE_NOTES.md
+          echo "macOS AMD64: aospparse-darwin-amd64" >> RELEASE_NOTES.md
+          echo "macOS ARM64: aospparse-darwin-arm64" >> RELEASE_NOTES.md
+          echo "Windows AMD64: aospparse-windows-amd64.exe" >> RELEASE_NOTES.md
+          echo "Windows ARM64: aospparse-windows-arm64.exe" >> RELEASE_NOTES.md
           
           ## Changelog
           

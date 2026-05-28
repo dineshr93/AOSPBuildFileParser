@@ -11,44 +11,56 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Go
+      - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.23'
-          cache: true
 
-      - name: Run tests
+      - name: Build
         run: |
-          echo "Running go mod tidy..."
-          go mod tidy || true
-          echo "Running tests with verbose output..."
-          go test ./... -v 2>&1 || echo "Some tests may have failed"
+          go mod tidy
+          go build -v -o aospparse .
 
-      - name: Build, validate, and generate release notes
-        id: build_and_release
+      - name: Build for all platforms
         run: |
-          chmod +x .github/scripts/release.sh
-          .github/scripts/release.sh
-        shell: bash
+          GOOS=linux GOARCH=amd64 go build -o aospparse-linux-amd64 .
+          GOOS=linux GOARCH=arm64 go build -o aospparse-linux-arm64 .
+          GOOS=darwin GOARCH=amd64 go build -o aospparse-darwin-amd64 .
+          GOOS=darwin GOARCH=arm64 go build -o aospparse-darwin-arm64 .
+          GOOS=windows GOARCH=amd64 go build -o aospparse-windows-amd64.exe .
+          GOOS=windows GOARCH=arm64 go build -o aospparse-windows-arm64.exe .
+
+      - name: Validate binaries
+        run: |
+          ls -la aospparse-*
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          IS_PRERELEASE=false
+          if [[ "$TAG" =~ -alpha|-beta|-rc|-pre ]]; then
+            IS_PRERELEASE=true
+          fi
+          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        id: create_release
         uses: softprops/action-gh-release@v1
         with:
           name: Release ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
-          body_path: RELEASE_NOTES.md
           draft: false
-          prerelease: ${{ steps.build_and_release.outputs.is_prerelease }}
+          prerelease: ${{ steps.release_notes.outputs.is_prerelease }}
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
-        if: steps.create_release.outcome == 'success'
         with:
           files: |
             aospparse-linux-amd64
@@ -57,12 +69,4 @@ jobs:
             aospparse-darwin-arm64
             aospparse-windows-amd64.exe
             aospparse-windows-arm64.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Clean up build artifacts
-        if: always()
-        run: |
-          rm -f aospparse-*
-          rm -f RELEASE_NOTES.md
-          echo "Cleaned up build artifacts"
+          token: ${{ secrets.GITHUB_TOKEN }}

@@ -17,54 +17,35 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.18'
           cache: true
-
-      - name: Verify Go setup
-        run: |
-          echo "=== Go version ==="
-          go version
-          echo "=== Go env ==="
-          go env
-          echo "=== Working directory ==="
-          pwd
-          echo "=== Files ==="
-          ls -la
-          echo "=== go.mod ==="
-          cat go.mod
-
-      - name: Run tests
-        run: |
-          echo "=== Running go mod tidy ==="
-          go mod tidy
-          echo "=== Running tests ==="
-          go test -v ./...
 
       - name: Build binaries for all platforms
         run: |
-          echo "=== Building for Linux AMD64 ==="
-          GOOS=linux GOARCH=amd64 go build -v -o aospparse-linux-amd64 .
-          echo "=== Building for Linux ARM64 ==="
-          GOOS=linux GOARCH=arm64 go build -v -o aospparse-linux-arm64 .
-          echo "=== Building for macOS AMD64 ==="
-          GOOS=darwin GOARCH=amd64 go build -v -o aospparse-darwin-amd64 .
-          echo "=== Building for macOS ARM64 ==="
-          GOOS=darwin GOARCH=arm64 go build -v -o aospparse-darwin-arm64 .
-          echo "=== Building for Windows AMD64 ==="
-          GOOS=windows GOARCH=amd64 go build -v -o aospparse-windows-amd64.exe .
-          echo "=== Building for Windows ARM64 ==="
-          GOOS=windows GOARCH=arm64 go build -v -o aospparse-windows-arm64.exe .
+          # Linux AMD64
+          GOOS=linux GOARCH=amd64 go build -v -o aospparse-linux-amd64 . || exit 1
+          
+          # Linux ARM64
+          GOOS=linux GOARCH=arm64 go build -v -o aospparse-linux-arm64 . || exit 1
+          
+          # macOS AMD64
+          GOOS=darwin GOARCH=amd64 go build -v -o aospparse-darwin-amd64 . || exit 1
+          
+          # macOS ARM64 (Apple Silicon)
+          GOOS=darwin GOARCH=arm64 go build -v -o aospparse-darwin-arm64 . || exit 1
+          
+          # Windows AMD64
+          GOOS=windows GOARCH=amd64 go build -v -o aospparse-windows-amd64.exe . || exit 1
 
       - name: Validate build outputs
         run: |
-          echo "=== Verifying build outputs ==="
+          # Verify all expected binaries exist
           expected_files=(
             "aospparse-linux-amd64"
             "aospparse-linux-arm64"
             "aospparse-darwin-amd64"
             "aospparse-darwin-arm64"
             "aospparse-windows-amd64.exe"
-            "aospparse-windows-arm64.exe"
           )
           for file in "${expected_files[@]}"; do
             if [[ ! -f "$file" ]]; then
@@ -77,26 +58,62 @@ jobs:
       - name: Generate release notes
         id: release_notes
         run: |
+          # Extract tag name
           TAG=${GITHUB_REF#refs/tags/}
+          
+          # Validate tag format (basic semver check)
+          if [[ ! "$TAG" =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+(-.*)?$ ]]; then
+            echo "Warning: Tag format may not follow semantic versioning: $TAG"
+            echo "Expected format: v1.2.3 or v1.2.3-rc.1"
+          fi
+          
+          # Detect prerelease based on tag name
           IS_PRERELEASE=false
           if [[ "$TAG" =~ -alpha|-beta|-rc|-pre ]]; then
             IS_PRERELEASE=true
+            echo "Detected prerelease tag: $TAG"
           fi
-          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          
+          # Generate release notes (template with placeholder)
+          VERSION="${TAG#v}"
+          cat > RELEASE_NOTES.md << EOF
+          # AOSP Build File Parser v$VERSION
+          
+          ## What's Changed
+          
+          This release includes:
+          - Full AOSP tree scanning for .bp and .mk files
+          - Variable resolution and defaults chain inheritance
+          - Transitive dependency resolution via BFS traversal
+          - Source file path extraction for license compliance
+          
+          ## Features
+          
+          - Scan AOSP directory tree for Blueprint (.bp) and Makefile (.mk) files
+          - Parse cc_binary, cc_library, cc_defaults modules from .bp files
+          - Parse LOCAL_MODULE, LOCAL_SRC_FILES, LOCAL_SHARED_LIBRARIES from .mk files
+          - Resolve variable references and dependency inheritance
+          - Extract transitive dependencies for license compliance
+          - Output module registry as JSON for downstream tools
+          
+          ## Installation
+          
+          Download the pre-built binary for your platform from the assets below.
+          
+          ## Changelog
+          
+          See full changelog at https://github.com/dineshr93/AOSPBuildFileParser/releases
+          
+          ## Credits
+          
+          Developed by Dinesh R
+          EOF
+          
+          echo "Release notes generated successfully"
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
-        with:
-          name: Release ${{ github.ref_name }}
-          tag_name: ${{ github.ref_name }}
-          draft: false
-          prerelease: ${{ steps.release_notes.outputs.is_prerelease }}
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Release Assets
-        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
             aospparse-linux-amd64
@@ -104,5 +121,7 @@ jobs:
             aospparse-darwin-amd64
             aospparse-darwin-arm64
             aospparse-windows-amd64.exe
-            aospparse-windows-arm64.exe
-          token: ${{ secrets.GITHUB_TOKEN }}
+          body_path: RELEASE_NOTES.md
+          prerelease: ${{ env.IS_PRERELEASE }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

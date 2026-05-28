@@ -33,57 +33,52 @@ ls -la aospparse-*
 
 echo "=== Generating release notes ==="
 TAG=${GITHUB_REF#refs/tags/}
+VERSION="${TAG#v}"
 
-cat > RELEASE_NOTES.md << 'NOTES_EOF'
-# AOSP Build File Parser TAG_PLACEHOLDER
-
-This release includes:
-- Full AOSP tree scanning for .bp and .mk files
-- Variable resolution and defaults chain inheritance
-- Transitive dependency resolution via BFS traversal
-- Source file path extraction for license compliance
-
-## Features
-
-- Full tree scanning - Recursively parse all Android.bp and Android.mk files
-- Variable resolution - Resolve variable assignments referenced in module properties
-- Defaults chain resolution - Properly handle cc_defaults and similar inheritance
-- Transitive dependency resolution - BFS traversal through all dependency chains
-- Source path extraction - Map modules to actual source file paths
-- Structured JSON output - Machine-readable registry for pipeline integration
-
-## Usage
-
-# Scan an AOSP tree
-./aospparse scan /path/to/aosp > module_registry.json
-
-# Resolve transitive dependencies
-./aospparse deps module_registry.json libvsomeip3
-
-# Extract source file paths
-./aospparse paths module_registry.json libvsomeip3
-
-## Downloads
-
-| Platform | Architecture | Binary |
-|----------|--------------|--------|
-| Linux | AMD64 | aospparse-linux-amd64 |
-| Linux | ARM64 | aospparse-linux-arm64 |
-| macOS | AMD64 | aospparse-darwin-amd64 |
-| macOS | ARM64 | aospparse-darwin-arm64 |
-| Windows | AMD64 | aospparse-windows-amd64.exe |
-| Windows | ARM64 | aospparse-windows-arm64.exe |
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
-
-## License
-
-Apache 2.0 (parsers from AOSP). Main tool code is MIT.
-NOTES_EOF
-
-sed -i "s/TAG_PLACEHOLDER/$TAG/" RELEASE_NOTES.md
+# Create release notes inline
+{
+  echo "# AOSP Build File Parser v$VERSION"
+  echo ""
+  echo "This release includes:"
+  echo "- Full AOSP tree scanning for .bp and .mk files"
+  echo "- Variable resolution and defaults chain inheritance"
+  echo "- Transitive dependency resolution via BFS traversal"
+  echo "- Source file path extraction for license compliance"
+  echo ""
+  echo "## Features"
+  echo ""
+  echo "- Full tree scanning - Recursively parse all Android.bp and Android.mk files"
+  echo "- Variable resolution - Resolve variable assignments referenced in module properties"
+  echo "- Defaults chain resolution - Properly handle cc_defaults and similar inheritance"
+  echo "- Transitive dependency resolution - BFS traversal through all dependency chains"
+  echo "- Source path extraction - Map modules to actual source file paths"
+  echo "- Structured JSON output - Machine-readable registry for pipeline integration"
+  echo ""
+  echo "## Usage"
+  echo ""
+  echo "Scan an AOSP tree: ./aospparse scan /path/to/aosp > module_registry.json"
+  echo "Resolve dependencies: ./aospparse deps module_registry.json libvsomeip3"
+  echo "Extract paths: ./aospparse paths module_registry.json libvsomeip3"
+  echo ""
+  echo "## Downloads"
+  echo ""
+  echo "| Platform | Architecture | Binary |"
+  echo "|----------|--------------|--------|"
+  echo "| Linux | AMD64 | aospparse-linux-amd64 |"
+  echo "| Linux | ARM64 | aospparse-linux-arm64 |"
+  echo "| macOS | AMD64 | aospparse-darwin-amd64 |"
+  echo "| macOS | ARM64 | aospparse-darwin-arm64 |"
+  echo "| Windows | AMD64 | aospparse-windows-amd64.exe |"
+  echo "| Windows | ARM64 | aospparse-windows-arm64.exe |"
+  echo ""
+  echo "## Changelog"
+  echo ""
+  echo "See [CHANGELOG.md](CHANGELOG.md) for detailed changes."
+  echo ""
+  echo "## License"
+  echo ""
+  echo "Apache 2.0 (parsers from AOSP). Main tool code is MIT."
+} > RELEASE_NOTES.md
 
 echo "tag_name=$TAG" >> $GITHUB_OUTPUT
 echo "is_prerelease=false" >> $GITHUB_OUTPUT

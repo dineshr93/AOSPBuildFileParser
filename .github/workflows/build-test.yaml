@@ -17,11 +17,17 @@ jobs:
         with:
           go-version: '1.23'
 
-      - name: Show Go version
-        run: go version
-
-      - name: List files
-        run: ls -la
-
-      - name: Build
-        run: go build -v -o aospparse-test .
+      - name: Debug Go setup
+        run: |
+          echo "=== Go version ==="
+          go version
+          echo "=== Go env ==="
+          go env
+          echo "=== go.mod content ==="
+          cat go.mod
+          echo "=== Files in directory ==="
+          ls -la
+          echo "=== go.sum exists? ==="
+          test -f go.sum && echo "go.sum exists" || echo "go.sum NOT found"
+          echo "=== go build -n (dry run) ==="
+          go build -n -o aospparse-test .

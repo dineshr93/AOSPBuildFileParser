@@ -20,15 +20,19 @@ jobs:
           go-version: '1.21'
           cache: true
 
-      - name: Setup and build
+      - name: Build binaries
         run: |
-          chmod +x .github/scripts/setup.sh
-          bash .github/scripts/setup.sh
-          GOOS=linux GOARCH=amd64 go build -v -o aospparse-linux-amd64 .
-          GOOS=linux GOARCH=arm64 go build -v -o aospparse-linux-arm64 .
-          GOOS=darwin GOARCH=amd64 go build -v -o aospparse-darwin-amd64 .
-          GOOS=darwin GOARCH=arm64 go build -v -o aospparse-darwin-arm64 .
-          GOOS=windows GOARCH=amd64 go build -v -o aospparse-windows-amd64.exe .
+          go version
+          go env
+          pwd
+          ls -la
+          go build -v .
+          GOOS=linux GOARCH=amd64 go build -o aospparse-linux-amd64 .
+          GOOS=linux GOARCH=arm64 go build -o aospparse-linux-arm64 .
+          GOOS=darwin GOARCH=amd64 go build -o aospparse-darwin-amd64 .
+          GOOS=darwin GOARCH=arm64 go build -o aospparse-darwin-arm64 .
+          GOOS=windows GOARCH=amd64 go build -o aospparse-windows-amd64.exe .
+          ls -la aospparse-*
 
       - name: Create Release
         uses: softprops/action-gh-release@v1

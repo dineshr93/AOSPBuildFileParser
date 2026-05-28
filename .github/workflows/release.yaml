@@ -49,6 +49,13 @@ jobs:
           echo "=== Building for Windows ARM64 ==="
           GOOS=windows GOARCH=arm64 go build -v -o aospparse-windows-arm64.exe . || echo "Windows ARM64 build failed"
 
+      - name: List build outputs for debugging
+        run: |
+          echo "=== Current directory contents ==="
+          ls -la
+          echo "=== Looking for aospparse binaries ==="
+          ls -la aospparse-* 2>/dev/null || echo "No aospparse binaries found"
+          
       - name: Validate build outputs
         run: |
           # Verify all expected binaries exist

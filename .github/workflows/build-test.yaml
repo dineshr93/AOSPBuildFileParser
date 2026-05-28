@@ -3,8 +3,6 @@ name: Build Test
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 jobs:
   build:
@@ -17,30 +15,5 @@ jobs:
         with:
           go-version: '1.23'
 
-      - name: Show Go environment
-        run: |
-          echo "=== Go version ==="
-          go version
-          echo "=== Go env ==="
-          go env
-          echo "=== Working directory ==="
-          pwd
-          echo "=== Files in working directory ==="
-          ls -la
-
-      - name: Run go build with full error output
-        id: build
-        run: |
-          set -e
-          echo "Attempting go build..."
-          go build -v -o aospparse-test . 2>&1 | tee build.log || true
-          echo "Exit code: $?"
-          if [ -f aospparse-test ]; then
-            echo "Binary created successfully!"
-            ls -la aospparse-test
-          else
-            echo "ERROR: Binary was not created!"
-            echo "Build log:"
-            cat build.log
-            exit 1
-          fi
+      - name: Build
+        run: go build .

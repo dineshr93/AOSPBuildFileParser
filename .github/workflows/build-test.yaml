@@ -14,13 +14,14 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.23'
-          check-latest: true
 
-      - name: Build
+      - name: Debug build
         run: |
-          echo "Current directory: $(pwd)"
-          echo "Go version: $(go version)"
-          echo "Building..."
-          go build -v -o aospparse .
-          echo "Build completed successfully"
-          ls -la aospparse
+          echo "=== Working directory ==="
+          pwd
+          echo "=== Files ==="
+          ls -la
+          echo "=== go.mod ==="
+          cat go.mod
+          echo "=== go build -x ==="
+          go build -x . 2>&1 | head -50

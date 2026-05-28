@@ -19,10 +19,8 @@ jobs:
         with:
           go-version: '1.23'
 
-      - name: Build
-        run: |
-          go mod tidy
-          go build -v -o aospparse .
+      - name: Go build
+        run: go build -v -o aospparse .
 
       - name: Build for all platforms
         run: |
@@ -31,11 +29,10 @@ jobs:
           GOOS=darwin GOARCH=amd64 go build -o aospparse-darwin-amd64 .
           GOOS=darwin GOARCH=arm64 go build -o aospparse-darwin-arm64 .
           GOOS=windows GOARCH=amd64 go build -o aospparse-windows-amd64.exe .
-          GOOS=windows GOARCH=arm64 go build -o aospparse-windows-arm64.exe .
+          GOOS=windows GOARCH=arm64 go build -o aospparse-windows-arm64.exe
 
       - name: Validate binaries
-        run: |
-          ls -la aospparse-*
+        run: ls -la aospparse-*
 
       - name: Generate release notes
         id: release_notes
@@ -46,7 +43,6 @@ jobs:
             IS_PRERELEASE=true
           fi
           echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v1

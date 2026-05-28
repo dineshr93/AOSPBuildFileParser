@@ -16,6 +16,6 @@ jobs:
           go-version: '1.23'
 
       - name: Build
-        run: |
-          echo "=== Building Go application ==="
-          go build -v -o aospparse-test .
+        env:
+          GO111MODULE: 'on'
+        run: go build -v -o aospparse-test .

@@ -17,85 +17,44 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.23'
           cache: true
 
       - name: Run tests
         run: |
-          echo "=== Go Environment ==="
-          go version
-          echo "=== Running go mod tidy ==="
-          go mod tidy || echo "go mod tidy failed or no changes needed"
-          echo "=== Running tests ==="
-          go test -v -timeout=5m ./... || echo "Some tests may have failed"
+          go mod tidy || true
+          go test -v -timeout=5m ./... || true
 
-      - name: Build and validate binaries
-        id: build_and_validate
+      - name: Build binaries
         run: |
-          echo "=== Building for Linux AMD64 ==="
-          GOOS=linux GOARCH=amd64 go build -v -o aospparse-linux-amd64 . || exit 1
-          
-          echo "=== Building for Linux ARM64 ==="
-          GOOS=linux GOARCH=arm64 go build -v -o aospparse-linux-arm64 . || exit 1
-          
-          echo "=== Building for macOS AMD64 ==="
-          GOOS=darwin GOARCH=amd64 go build -v -o aospparse-darwin-amd64 . || exit 1
-          
-          echo "=== Building for macOS ARM64 ==="
-          GOOS=darwin GOARCH=arm64 go build -v -o aospparse-darwin-arm64 . || exit 1
-          
-          echo "=== Building for Windows AMD64 ==="
-          GOOS=windows GOARCH=amd64 go build -v -o aospparse-windows-amd64.exe . || exit 1
-          
-          echo "=== Building for Windows ARM64 ==="
-          GOOS=windows GOARCH=arm64 go build -v -o aospparse-windows-arm64.exe . || exit 1
-          
-          echo "=== Validating build outputs ==="
+          GOOS=linux GOARCH=amd64 go build -v -o aospparse-linux-amd64 .
+          GOOS=linux GOARCH=arm64 go build -v -o aospparse-linux-arm64 .
+          GOOS=darwin GOARCH=amd64 go build -v -o aospparse-darwin-amd64 .
+          GOOS=darwin GOARCH=arm64 go build -v -o aospparse-darwin-arm64 .
+          GOOS=windows GOARCH=amd64 go build -v -o aospparse-windows-amd64.exe .
+          GOOS=windows GOARCH=arm64 go build -v -o aospparse-windows-arm64.exe .
           ls -la aospparse-*
-          
-          expected_files=(
-            "aospparse-linux-amd64"
-            "aospparse-linux-arm64"
-            "aospparse-darwin-amd64"
-            "aospparse-darwin-arm64"
-            "aospparse-windows-amd64.exe"
-            "aospparse-windows-arm64.exe"
-          )
-          for file in "${expected_files[@]}"; do
-            if [[ ! -f "$file" ]]; then
-              echo "ERROR: Missing build artifact: $file"
-              exit 1
-            fi
-            echo "Found: $file"
-          done
-          
-          echo "Build and validation successful!"
 
       - name: Generate release notes
         id: release_notes
         run: |
           chmod +x .github/scripts/generate_release_notes.sh
           bash .github/scripts/generate_release_notes.sh
-        env:
-          GITHUB_REF: ${{ github.ref }}
 
       - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           body: |
             ${{ steps.release_notes.outputs.release_notes }}
           draft: false
-          prerelease: ${{ steps.release_notes.outputs.is_prerelease }}
+          prerelease: ${{ steps.release_notes.outputs.is_prerelease == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Assets
-        id: upload_assets
-        uses: softprops/action-gh-release@v1
-        if: steps.create_release.outcome == 'success'
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             aospparse-linux-amd64
@@ -105,9 +64,3 @@ jobs:
             aospparse-windows-amd64.exe
             aospparse-windows-arm64.exe
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Clean up build artifacts
-        if: always()
-        run: |
-          rm -f aospparse-*
-          echo "Cleaned up build artifacts"

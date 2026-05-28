@@ -27,8 +27,8 @@ jobs:
           echo "Running tests with verbose output..."
           go test ./... -v 2>&1 || echo "Some tests may have failed"
 
-      - name: Build, validate, and upload binaries
-        id: build_and_upload
+      - name: Build, validate, and generate release notes
+        id: build_and_release
         run: |
           chmod +x .github/scripts/release.sh
           .github/scripts/release.sh
@@ -42,7 +42,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           body_path: RELEASE_NOTES.md
           draft: false
-          prerelease: ${{ steps.build_and_upload.outputs.is_prerelease }}
+          prerelease: ${{ steps.build_and_release.outputs.is_prerelease }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

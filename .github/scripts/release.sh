@@ -36,49 +36,47 @@ TAG=${GITHUB_REF#refs/tags/}
 VERSION="${TAG#v}"
 
 # Create release notes inline
-{
-  echo "# AOSP Build File Parser v$VERSION"
-  echo ""
-  echo "This release includes:"
-  echo "- Full AOSP tree scanning for .bp and .mk files"
-  echo "- Variable resolution and defaults chain inheritance"
-  echo "- Transitive dependency resolution via BFS traversal"
-  echo "- Source file path extraction for license compliance"
-  echo ""
-  echo "## Features"
-  echo ""
-  echo "- Full tree scanning - Recursively parse all Android.bp and Android.mk files"
-  echo "- Variable resolution - Resolve variable assignments referenced in module properties"
-  echo "- Defaults chain resolution - Properly handle cc_defaults and similar inheritance"
-  echo "- Transitive dependency resolution - BFS traversal through all dependency chains"
-  echo "- Source path extraction - Map modules to actual source file paths"
-  echo "- Structured JSON output - Machine-readable registry for pipeline integration"
-  echo ""
-  echo "## Usage"
-  echo ""
-  echo "Scan an AOSP tree: ./aospparse scan /path/to/aosp > module_registry.json"
-  echo "Resolve dependencies: ./aospparse deps module_registry.json libvsomeip3"
-  echo "Extract paths: ./aospparse paths module_registry.json libvsomeip3"
-  echo ""
-  echo "## Downloads"
-  echo ""
-  echo "| Platform | Architecture | Binary |"
-  echo "|----------|--------------|--------|"
-  echo "| Linux | AMD64 | aospparse-linux-amd64 |"
-  echo "| Linux | ARM64 | aospparse-linux-arm64 |"
-  echo "| macOS | AMD64 | aospparse-darwin-amd64 |"
-  echo "| macOS | ARM64 | aospparse-darwin-arm64 |"
-  echo "| Windows | AMD64 | aospparse-windows-amd64.exe |"
-  echo "| Windows | ARM64 | aospparse-windows-arm64.exe |"
-  echo ""
-  echo "## Changelog"
-  echo ""
-  echo "See [CHANGELOG.md](CHANGELOG.md) for detailed changes."
-  echo ""
-  echo "## License"
-  echo ""
-  echo "Apache 2.0 (parsers from AOSP). Main tool code is MIT."
-} > RELEASE_NOTES.md
+echo "# AOSP Build File Parser v$VERSION" > RELEASE_NOTES.md
+echo "" >> RELEASE_NOTES.md
+echo "This release includes:" >> RELEASE_NOTES.md
+echo "- Full AOSP tree scanning for .bp and .mk files" >> RELEASE_NOTES.md
+echo "- Variable resolution and defaults chain inheritance" >> RELEASE_NOTES.md
+echo "- Transitive dependency resolution via BFS traversal" >> RELEASE_NOTES.md
+echo "- Source file path extraction for license compliance" >> RELEASE_NOTES.md
+echo "" >> RELEASE_NOTES.md
+echo "## Features" >> RELEASE_NOTES.md
+echo "" >> RELEASE_NOTES.md
+echo "- Full tree scanning - Recursively parse all Android.bp and Android.mk files" >> RELEASE_NOTES.md
+echo "- Variable resolution - Resolve variable assignments referenced in module properties" >> RELEASE_NOTES.md
+echo "- Defaults chain resolution - Properly handle cc_defaults and similar inheritance" >> RELEASE_NOTES.md
+echo "- Transitive dependency resolution - BFS traversal through all dependency chains" >> RELEASE_NOTES.md
+echo "- Source path extraction - Map modules to actual source file paths" >> RELEASE_NOTES.md
+echo "- Structured JSON output - Machine-readable registry for pipeline integration" >> RELEASE_NOTES.md
+echo "" >> RELEASE_NOTES.md
+echo "## Usage" >> RELEASE_NOTES.md
+echo "" >> RELEASE_NOTES.md
+echo "Scan an AOSP tree: ./aospparse scan /path/to/aosp > module_registry.json" >> RELEASE_NOTES.md
+echo "Resolve dependencies: ./aospparse deps module_registry.json libvsomeip3" >> RELEASE_NOTES.md
+echo "Extract paths: ./aospparse paths module_registry.json libvsomeip3" >> RELEASE_NOTES.md
+echo "" >> RELEASE_NOTES.md
+echo "## Downloads" >> RELEASE_NOTES.md
+echo "" >> RELEASE_NOTES.md
+echo "| Platform | Architecture | Binary |" >> RELEASE_NOTES.md
+echo "|----------|--------------|--------|" >> RELEASE_NOTES.md
+echo "| Linux | AMD64 | aospparse-linux-amd64 |" >> RELEASE_NOTES.md
+echo "| Linux | ARM64 | aospparse-linux-arm64 |" >> RELEASE_NOTES.md
+echo "| macOS | AMD64 | aospparse-darwin-amd64 |" >> RELEASE_NOTES.md
+echo "| macOS | ARM64 | aospparse-darwin-arm64 |" >> RELEASE_NOTES.md
+echo "| Windows | AMD64 | aospparse-windows-amd64.exe |" >> RELEASE_NOTES.md
+echo "| Windows | ARM64 | aospparse-windows-arm64.exe |" >> RELEASE_NOTES.md
+echo "" >> RELEASE_NOTES.md
+echo "## Changelog" >> RELEASE_NOTES.md
+echo "" >> RELEASE_NOTES.md
+echo "See [CHANGELOG.md](CHANGELOG.md) for detailed changes." >> RELEASE_NOTES.md
+echo "" >> RELEASE_NOTES.md
+echo "## License" >> RELEASE_NOTES.md
+echo "" >> RELEASE_NOTES.md
+echo "Apache 2.0 (parsers from AOSP). Main tool code is MIT." >> RELEASE_NOTES.md
 
 echo "tag_name=$TAG" >> $GITHUB_OUTPUT
 echo "is_prerelease=false" >> $GITHUB_OUTPUT

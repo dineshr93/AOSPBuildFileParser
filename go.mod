@@ -1,3 +1,3 @@
 module github.com/dineshr93/AOSPBuildFileParser
 
-go 1.23
+go 1.18

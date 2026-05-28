@@ -1,20 +1,4 @@
-# Binaries
 aospparse
-
-# Build artifacts
-*.exe
-*.test
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Temporary files
-*.json.tmp
+aospparse-*
+*.log
 sample_registry.json

@@ -19,8 +19,8 @@ import (
 	"sort"
 	"strings"
 
-	bkparser "AOSPBuildFileParser/blueprint/parser"
-	mkparser "AOSPBuildFileParser/androidmk/parser"
+	bkparser "github.com/dineshr93/AOSPBuildFileParser/blueprint/parser"
+	mkparser "github.com/dineshr93/AOSPBuildFileParser/androidmk/parser"
 )
 
 // ModuleInfo represents a parsed module from a .bp or .mk file.

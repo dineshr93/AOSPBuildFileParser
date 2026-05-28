@@ -1,5 +1,9 @@
 # AOSP Build File Parser
 
+[![Go Version](https://img.shields.io/github/go-mod/go-version/dineshr93/AOSPBuildFileParser)](https://github.com/dineshr93/AOSPBuildFileParser)
+[![License](https://img.shields.io/github/license/dineshr93/AOSPBuildFileParser)](LICENSE)
+[![Releases](https://img.shields.io/github/v/release/dineshr93/AOSPBuildFileParser)](https://github.com/dineshr93/AOSPBuildFileParser/releases)
+
 A comprehensive tool for parsing AOSP (Android Open Source Project) build files (`Android.bp` and `Android.mk`) to build a **central module registry** for **license compliance scanning** (e.g., BlackDuck, Synopsys).
 
 Uses the **official AOSP Soong blueprint parser** and **androidmk parser** — no custom regex-based parsing.
@@ -20,6 +24,12 @@ go build -o aospparse .
 ```
 
 Requires Go 1.18+.
+
+### With Make
+
+```bash
+make build
+```
 
 ## Usage
 
@@ -57,6 +67,45 @@ For a module and all its transitive deps, outputs every source file path relativ
 ./aospparse extract Android.bp srcs
 ./aospparse extract Android.mk LOCAL_SRC_FILES
 ```
+
+## Download Pre-built Binaries
+
+Download ready-to-use binaries from the [Releases](https://github.com/dineshr93/AOSPBuildFileParser/releases) page:
+
+| Platform | Architecture | Binary |
+|----------|--------------|--------|
+| Linux | AMD64 | aospparse-linux-amd64 |
+| Linux | ARM64 | aospparse-linux-arm64 |
+| macOS | AMD64 | aospparse-darwin-amd64 |
+| macOS | ARM64 | aospparse-darwin-arm64 |
+| Windows | AMD64 | aospparse-windows-amd64.exe |
+| Windows | ARM64 | aospparse-windows-arm64.exe |
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
+
+## License
+
+Apache 2.0 (parsers from AOSP). Main tool code is MIT.
+
+## Release Process
+
+This project uses semantic versioning with git tags. To create a new release:
+
+1. Update version in code (if needed)
+2. Create and push a tag:
+
+```bash
+git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+```
+
+This triggers an automated GitHub Action that:
+- Runs tests
+- Builds binaries for all platforms
+- Creates a GitHub release with detailed release notes
+- Uploads pre-built binaries as release assets
 
 ## Output Format
 

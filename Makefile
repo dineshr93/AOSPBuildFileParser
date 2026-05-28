@@ -1,4 +1,4 @@
-.PHONY: all build clean test scan-extract scan-deps scan-paths
+.PHONY: all build clean test scan-extract scan-deps scan-paths release
 
 BINARY_NAME = aospparse
 GO = go
@@ -57,3 +57,19 @@ help:
 	@echo "  scan-paths   - Demo: scan tree + resolve source paths"
 	@echo "  demo         - Run all demos"
 	@echo "  help         - Show this help"
+
+release:
+	@if [ -z "$(TAG)" ]; then \
+		echo "Error: TAG is required. Usage: make release TAG=v1.0.0"; \
+		exit 1; \
+	fi
+	@echo "Creating release $(TAG)..."
+	@echo "Running tests..."
+	$(GO) test ./... -v
+	@echo "Building release binary..."
+	GOOS=linux GOARCH=amd64 $(GO) build -o $(BINARY_NAME)-linux-amd64 .
+	GOOS=darwin GOARCH=amd64 $(GO) build -o $(BINARY_NAME)-darwin-amd64 .
+	GOOS=darwin GOARCH=arm64 $(GO) build -o $(BINARY_NAME)-darwin-arm64 .
+	GOOS=windows GOARCH=amd64 $(GO) build -o $(BINARY_NAME)-windows-amd64.exe .
+	@echo "Built release binaries successfully"
+	@echo "Run 'git tag -a $(TAG) -m \"Release $(TAG)\" && git push origin $(TAG)' to publish"

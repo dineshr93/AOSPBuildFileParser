@@ -49,6 +49,23 @@ jobs:
           
           echo "=== Listing build outputs ==="
           ls -la aospparse-* 2>&1 || echo "No build outputs found"
+      
+      - name: Debug build artifacts
+        run: |
+          echo "=== Files in current directory ==="
+          ls -la
+          echo "=== Looking for aospparse binaries ==="
+          ls -la aospparse-* 2>&1 || echo "No aospparse-* files found"
+          echo "=== File count check ==="
+          find . -name "aospparse-*" -type f | wc -l
+          echo "=== Checking specific files ==="
+          for f in aospparse-linux-amd64 aospparse-linux-arm64 aospparse-darwin-amd64 aospparse-darwin-arm64 aospparse-windows-amd64.exe aospparse-windows-arm64.exe; do
+            if [ -f "$f" ]; then
+              echo "FOUND: $f"
+            else
+              echo "MISSING: $f"
+            fi
+          done
 
       - name: Validate build outputs
         run: |

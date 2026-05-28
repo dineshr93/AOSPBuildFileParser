@@ -267,13 +267,6 @@ func extractModuleInfo(mod *bkparser.Module, relPath, dir, filePath string, vari
 				info.AllDeps = make([]string, 0)
 			}
 			info.AllDeps = append(info.AllDeps, deps...)
-		case "static_libs":
-			if info.AllDeps == nil {
-				info.AllDeps = make([]string, 0)
-			}
-			info.AllDeps = append(info.AllDeps, extractStrings(value)...)
-		case "shared_libs":
-			info.AllDeps = append(info.AllDeps, extractStrings(value)...)
 		}
 	}
 
@@ -563,9 +556,7 @@ func cmdPaths(args []string) {
 		os.Exit(1)
 	}
 
-	registry := loadRegistry(args[0])
-	globalRegistry = registry
-	modules := args[1:]
+		registry := loadRegistry(args[0])\n	globalRegistry = &registry\n	modules := args[1:]
 
 	// First resolve all transitive deps
 	visited := make(map[string]bool)

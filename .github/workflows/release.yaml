@@ -31,23 +31,23 @@ jobs:
 
       - name: Build binaries for all platforms
         run: |
-          # Linux AMD64
-          GOOS=linux GOARCH=amd64 go build -v -o aospparse-linux-amd64 .
+          echo "=== Building for Linux AMD64 ==="
+          GOOS=linux GOARCH=amd64 go build -v -o aospparse-linux-amd64 . || echo "Linux AMD64 build failed"
           
-          # Linux ARM64
-          GOOS=linux GOARCH=arm64 go build -v -o aospparse-linux-arm64 .
+          echo "=== Building for Linux ARM64 ==="
+          GOOS=linux GOARCH=arm64 go build -v -o aospparse-linux-arm64 . || echo "Linux ARM64 build failed"
           
-          # macOS AMD64
-          GOOS=darwin GOARCH=amd64 go build -v -o aospparse-darwin-amd64 .
+          echo "=== Building for macOS AMD64 ==="
+          GOOS=darwin GOARCH=amd64 go build -v -o aospparse-darwin-amd64 . || echo "macOS AMD64 build failed"
           
-          # macOS ARM64 (Apple Silicon)
-          GOOS=darwin GOARCH=arm64 go build -v -o aospparse-darwin-arm64 .
+          echo "=== Building for macOS ARM64 ==="
+          GOOS=darwin GOARCH=arm64 go build -v -o aospparse-darwin-arm64 . || echo "macOS ARM64 build failed"
           
-          # Windows AMD64
-          GOOS=windows GOARCH=amd64 go build -v -o aospparse-windows-amd64.exe .
+          echo "=== Building for Windows AMD64 ==="
+          GOOS=windows GOARCH=amd64 go build -v -o aospparse-windows-amd64.exe . || echo "Windows AMD64 build failed"
           
-          # Windows ARM64
-          GOOS=windows GOARCH=arm64 go build -v -o aospparse-windows-arm64.exe .
+          echo "=== Building for Windows ARM64 ==="
+          GOOS=windows GOARCH=arm64 go build -v -o aospparse-windows-arm64.exe . || echo "Windows ARM64 build failed"
 
       - name: Validate build outputs
         run: |

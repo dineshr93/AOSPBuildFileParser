@@ -27,20 +27,51 @@ jobs:
 
       - name: Build binaries for all platforms
         run: |
+          echo "=== Go version ==="
+          go version
+          
+          echo "=== Go env ==="
+          go env
+          
+          echo "=== Directory ==="
+          pwd
+          
+          echo "=== Files ==="
+          ls -la
+          
+          echo "=== Building ==="
           # Linux AMD64
-          GOOS=linux GOARCH=amd64 go build -v -o aospparse-linux-amd64 . || exit 1
+          if ! GOOS=linux GOARCH=amd64 go build -v -o aospparse-linux-amd64 .; then
+            echo "ERROR: Linux AMD64 build failed"
+            exit 1
+          fi
           
           # Linux ARM64
-          GOOS=linux GOARCH=arm64 go build -v -o aospparse-linux-arm64 . || exit 1
+          if ! GOOS=linux GOARCH=arm64 go build -v -o aospparse-linux-arm64 .; then
+            echo "ERROR: Linux ARM64 build failed"
+            exit 1
+          fi
           
           # macOS AMD64
-          GOOS=darwin GOARCH=amd64 go build -v -o aospparse-darwin-amd64 . || exit 1
+          if ! GOOS=darwin GOARCH=amd64 go build -v -o aospparse-darwin-amd64 .; then
+            echo "ERROR: macOS AMD64 build failed"
+            exit 1
+          fi
           
           # macOS ARM64 (Apple Silicon)
-          GOOS=darwin GOARCH=arm64 go build -v -o aospparse-darwin-arm64 . || exit 1
+          if ! GOOS=darwin GOARCH=arm64 go build -v -o aospparse-darwin-arm64 .; then
+            echo "ERROR: macOS ARM64 build failed"
+            exit 1
+          fi
           
           # Windows AMD64
-          GOOS=windows GOARCH=amd64 go build -v -o aospparse-windows-amd64.exe . || exit 1
+          if ! GOOS=windows GOARCH=amd64 go build -v -o aospparse-windows-amd64.exe .; then
+            echo "ERROR: Windows AMD64 build failed"
+            exit 1
+          fi
+          
+          echo "=== All builds successful ==="
+          ls -la *.exe aospparse-* 2>/dev/null || ls -la aospparse-*
 
       - name: Validate build outputs
         run: |

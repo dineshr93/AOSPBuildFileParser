@@ -22,24 +22,144 @@ jobs:
 
       - name: Run tests
         run: |
-          go mod tidy || true
-          go test -v -timeout=5m ./... || true
+          go mod tidy
+          go test ./... -v
 
-      - name: Build and release
-        id: build_and_release
+      - name: Build binaries for all platforms
         run: |
-          chmod +x .github/scripts/release.sh
-          .github/scripts/release.sh
-        shell: bash
+          # Linux AMD64
+          GOOS=linux GOARCH=amd64 go build -v -o aospparse-linux-amd64 .
+          
+          # Linux ARM64
+          GOOS=linux GOARCH=arm64 go build -v -o aospparse-linux-arm64 .
+          
+          # macOS AMD64
+          GOOS=darwin GOARCH=amd64 go build -v -o aospparse-darwin-amd64 .
+          
+          # macOS ARM64 (Apple Silicon)
+          GOOS=darwin GOARCH=arm64 go build -v -o aospparse-darwin-arm64 .
+          
+          # Windows AMD64
+          GOOS=windows GOARCH=amd64 go build -v -o aospparse-windows-amd64.exe .
+          
+          # Windows ARM64
+          GOOS=windows GOARCH=arm64 go build -v -o aospparse-windows-arm64.exe .
+
+      - name: Validate build outputs
+        run: |
+          # Verify all expected binaries exist
+          expected_files=(
+            "aospparse-linux-amd64"
+            "aospparse-linux-arm64"
+            "aospparse-darwin-amd64"
+            "aospparse-darwin-arm64"
+            "aospparse-windows-amd64.exe"
+            "aospparse-windows-arm64.exe"
+          )
+          for file in "${expected_files[@]}"; do
+            if [[ ! -f "$file" ]]; then
+              echo "ERROR: Missing build artifact: $file"
+              exit 1
+            fi
+            echo "✓ Found: $file"
+          done
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Extract tag name
+          TAG=${GITHUB_REF#refs/tags/}
+          
+          # Validate tag format (basic semver check)
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-.*)?$ ]]; then
+            echo "Warning: Tag format may not follow semantic versioning: $TAG"
+            echo "Expected format: v1.2.3 or v1.2.3-rc.1"
+          fi
+          
+          # Detect prerelease based on tag name
+          IS_PRERELEASE=false
+          if [[ "$TAG" =~ -alpha|-beta|-rc|-pre ]]; then
+            IS_PRERELEASE=true
+            echo "Detected prerelease tag: $TAG"
+          fi
+          
+          # Generate release notes (template with placeholder)
+          VERSION="${TAG#v}"
+          cat > RELEASE_NOTES.md << EOF
+          # AOSP Build File Parser v$VERSION
+          
+          ## What's Changed
+          
+          This release includes:
+          - Full AOSP tree scanning for .bp and .mk files
+          - Variable resolution and defaults chain inheritance
+          - Transitive dependency resolution via BFS traversal
+          - Source file path extraction for license compliance
+          
+          ## Features
+          
+          - **Full tree scanning** - Recursively parse all Android.bp and Android.mk files
+          - **Variable resolution** - Resolve variable assignments referenced in module properties
+          - **Defaults chain resolution** - Properly handle cc_defaults and similar inheritance
+          - **Transitive dependency resolution** - BFS traversal through all dependency chains
+          - **Source path extraction** - Map modules to actual source file paths
+          - **Structured JSON output** - Machine-readable registry for pipeline integration
+          
+          ## Usage
+          
+          \`\`\`bash
+          # Scan an AOSP tree
+          ./aospparse scan /path/to/aosp > module_registry.json
+          
+          # Resolve transitive dependencies
+          ./aospparse deps module_registry.json libvsomeip3
+          
+          # Extract source file paths
+          ./aospparse paths module_registry.json libvsomeip3
+          \`\`\`
+          
+          ## Downloads
+          
+          | Platform | Architecture | Binary |
+          |----------|--------------|--------|
+          | Linux | AMD64 | aospparse-linux-amd64 |
+          | Linux | ARM64 | aospparse-linux-arm64 |
+          | macOS | AMD64 | aospparse-darwin-amd64 |
+          | macOS | ARM64 | aospparse-darwin-arm64 |
+          | Windows | AMD64 | aospparse-windows-amd64.exe |
+          | Windows | ARM64 | aospparse-windows-arm64.exe |
+          
+          ## Changelog
+          
+          See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
+          
+          ## License
+          
+          Apache 2.0 (parsers from AOSP). Main tool code is MIT.
+          EOF
+          
+          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+          cat RELEASE_NOTES.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        id: create_release
+        uses: softprops/action-gh-release@v1
         with:
-          name: Release ${{ steps.build_and_release.outputs.tag_name }}
-          tag_name: ${{ steps.build_and_release.outputs.tag_name }}
-          body_path: RELEASE_NOTES.md
+          name: Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          body: |
+            ${{ steps.release_notes.outputs.release_notes }}
           draft: false
-          prerelease: ${{ steps.build_and_release.outputs.is_prerelease == 'true' }}
+          prerelease: ${{ steps.release_notes.outputs.is_prerelease }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        if: steps.create_release.outcome == 'success'
+        with:
           files: |
             aospparse-linux-amd64
             aospparse-linux-arm64
@@ -49,3 +169,9 @@ jobs:
             aospparse-windows-arm64.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Clean up build artifacts
+        if: always()
+        run: |
+          rm -f aospparse-*
+          echo "Cleaned up build artifacts"

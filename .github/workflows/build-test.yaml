@@ -15,13 +15,7 @@ jobs:
         with:
           go-version: '1.23'
 
-      - name: Debug build
+      - name: Build
         run: |
-          echo "=== Working directory ==="
-          pwd
-          echo "=== Files ==="
-          ls -la
-          echo "=== go.mod ==="
-          cat go.mod
-          echo "=== go build -x ==="
-          go build -x . 2>&1 | head -50
+          echo "=== Building Go application ==="
+          go build -v -o aospparse-test .

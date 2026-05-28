@@ -26,7 +26,7 @@ import (
 
 var errTooManyErrors = errors.New("too many errors")
 
-const maxErrors = 1
+const maxErrors = 100
 
 type ParseError struct {
 	Err error

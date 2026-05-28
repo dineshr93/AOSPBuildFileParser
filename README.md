@@ -1,33 +1,154 @@
-# AOSPBuildFileParser
+# AOSP Build File Parser
 
-This is a parser for .bp and .mk file
+A comprehensive tool for parsing AOSP (Android Open Source Project) build files (`Android.bp` and `Android.mk`) to build a **central module registry** for **license compliance scanning** (e.g., BlackDuck, Synopsys).
 
-```
-import (
-bkparser "AOSPBuildFileParser/blueprint/parser"
-mkparser "AOSPBuildFileParser/androidmk/parser"
-)
+Uses the **official AOSP Soong blueprint parser** and **androidmk parser** — no custom regex-based parsing.
+
+## Features
+
+- **Full tree scanning** — recursively find and parse all `.bp` and `.mk` files in an AOSP tree
+- **Variable resolution** — resolves `foo = "bar"` assignments referenced as module properties
+- **Defaults chain resolution** — `cc_defaults` inheritance for C/C++ modules
+- **Transitive dependency resolution** — BFS graph traversal through all dependency chains
+- **Source path extraction** — maps modules to their actual source file paths
+- **Structured JSON output** — machine-readable registry for pipeline integration
+
+## Building
+
+```bash
+go build -o aospparse .
 ```
 
-## To build
-
-```
-cd AOSPBuildFileParser
-go build -o aospparse.exe
-```
+Requires Go 1.18+.
 
 ## Usage
 
-```
-aospparse.exe path/to/Android.bp keyName_in_Android.bp
+### 1. Scan the AOSP tree → Build registry
 
-
-for ex: aospparse.exe Android.bp deps
-aospparse.exe
-sample/Android.bp deps
-
+```bash
+./aospparse scan ~/aosp > module_registry.json
 ```
 
-The Core Parsers are taken from Soong build system in the AOSP and are available under Apache-2.0 License to reuse and modify.
+Outputs a JSON registry with:
+- Every module name, type, and build file location
+- All source files, shared/static/header libs, include dirs
+- `cc_defaults` chain with inherited properties
+- Total file counts
 
-This repo is for tracing the Suppliers code specific AOSP dependencies for OSS compliance activity
+### 2. Resolve transitive dependencies
+
+```bash
+./aospparse deps module_registry.json libvsomeip3
+```
+
+BFS traversal through all dependency chains — outputs every module that `libvsomeip3` depends on, transitively.
+
+### 3. Extract source file paths
+
+```bash
+./aospparse paths module_registry.json libvsomeip3
+```
+
+For a module and all its transitive deps, outputs every source file path relative to the AOSP root.
+
+### 4. Extract a property from a single file (legacy)
+
+```bash
+./aospparse extract Android.bp srcs
+./aospparse extract Android.mk LOCAL_SRC_FILES
+```
+
+## Output Format
+
+### `module_registry.json`
+
+```json
+{
+  "version": "1.0.0",
+  "root_dir": "/path/to/aosp",
+  "total_bp_files": 12345,
+  "total_mk_files": 6789,
+  "modules": {
+    "libvsomeip3": {
+      "name": "libvsomeip3",
+      "type": "cc_library_shared",
+      "file": "some/ip/libraries/Android.bp",
+      "dir": "some/ip/libraries",
+      "srcs": ["src/some.cpp", "src/other.cpp"],
+      "shared_libs": ["libcutils", "liblog"],
+      "static_libs": ["libprotobuf-cpp-full"],
+      "defaults": ["libvsomeip_defaults"],
+      "include_dirs": ["some/ip/libraries/include"],
+      "all_deps": ["libcutils", "liblog", "libprotobuf-cpp-full"],
+      "properties": { ... }
+    }
+  },
+  "defaults": {
+    "libvsomeip_defaults": { ... }
+  }
+}
+```
+
+## How It Works
+
+### Phase 1: Scan
+
+1. Walk the AOSP tree, finding all `Android.bp`, `*.bp`, `Android.mk`, `*.mk` files
+2. Parse `.bp` files with the official Soong blueprint parser
+3. Parse `.mk` files with the official Soong androidmk parser
+4. Extract module names, types, source files, and dependency properties
+5. Resolve variable assignments referenced in properties
+6. Resolve `defaults` chains (inheritance)
+7. Output structured JSON registry
+
+### Phase 2: Dependencies & Paths
+
+1. Load the registry JSON
+2. BFS through dependency graph from seed modules
+3. For each module, resolve source file paths relative to AOSP root
+4. Output flat list of all source files for license scanning
+
+## Known Dependency Properties by Module Type
+
+| Type | Dependency Properties |
+|------|----------------------|
+| `cc_library_shared` | `shared_libs`, `static_libs`, `header_libs`, `defaults` |
+| `cc_binary` | `static_libs`, `shared_libs`, `defaults` |
+| `cc_test` | `static_libs`, `shared_libs`, `defaults` |
+| `java_library` | `libs`, `static_libs`, `defaults` |
+| `android_app` | `libs`, `static_libs`, `defaults` |
+| `go_binary` | `deps`, `defaults` |
+| `cc_defaults` | (inherited by modules referencing it) |
+
+## License Compliance Workflow
+
+```
+./aospparse scan ~/aosp > registry.json
+./aospparse paths registry.json target_module > source_files.txt
+# Feed source_files.txt to BlackDuck/Synopsys scan
+blackduck-scan --source-files source_files.txt --project myproject
+```
+
+## Parsers
+
+- `blueprint/parser/` — Official AOSP Soong blueprint parser (from `build/soong/androidbp`)
+- `androidmk/parser/` — Official AOSP Soong androidmk parser (from `build/soong/androidmk`)
+
+Both are Apache 2.0 licensed from Google/AOSP.
+
+## Differences from Python Scripts (sample/)
+
+The Python scripts in `sample/` were the original approach using `module-info.json` generated by Soong builds. The Go tool replaces them:
+
+| Feature | Python (old) | Go (new) |
+|---------|-------------|----------|
+| Requires full build? | Yes (`module-info.json`) | No |
+| Tree scanning | No (single file) | Yes (recursive) |
+| `.mk` support | No | Yes |
+| Variable resolution | Partial | Yes |
+| Defaults resolution | No | Yes |
+| Output format | Mixed | Structured JSON |
+
+## License
+
+Apache 2.0 (parsers from AOSP). Main tool code is MIT.

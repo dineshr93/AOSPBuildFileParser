@@ -25,32 +25,21 @@ jobs:
           go mod tidy || true
           go test -v -timeout=5m ./... || true
 
-      - name: Build binaries
+      - name: Build and release
+        id: build_and_release
         run: |
-          chmod +x .github/scripts/build_all.sh
-          .github/scripts/build_all.sh
-
-      - name: Generate release notes
-        id: release_notes
-        run: |
-          chmod +x .github/scripts/generate_release_notes.sh
-          bash .github/scripts/generate_release_notes.sh
+          chmod +x .github/scripts/release.sh
+          .github/scripts/release.sh
+        shell: bash
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ github.ref_name }}
-          tag_name: ${{ github.ref_name }}
-          body: |
-            ${{ steps.release_notes.outputs.release_notes }}
+          name: Release ${{ steps.build_and_release.outputs.tag_name }}
+          tag_name: ${{ steps.build_and_release.outputs.tag_name }}
+          body_path: RELEASE_NOTES.md
           draft: false
-          prerelease: ${{ steps.release_notes.outputs.is_prerelease == 'true' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Release Assets
-        uses: softprops/action-gh-release@v2
-        with:
+          prerelease: ${{ steps.build_and_release.outputs.is_prerelease == 'true' }}
           files: |
             aospparse-linux-amd64
             aospparse-linux-arm64
@@ -58,4 +47,5 @@ jobs:
             aospparse-darwin-arm64
             aospparse-windows-amd64.exe
             aospparse-windows-arm64.exe
-          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

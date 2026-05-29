@@ -27,13 +27,8 @@ jobs:
         run: |
           TAG_NAME="${GITHUB_REF#refs/tags/}"
           echo "Tag: $TAG_NAME"
-          # Get the annotated tag message
-          TAG_MESSAGE=$(git tag -l "$TAG_NAME" --format='%(contents)' 2>/dev/null || echo "")
-          if [ -z "$TAG_MESSAGE" ]; then
-            echo "No annotated tag message found, using commit message"
-            TAG_MESSAGE=$(git log -1 --pretty=%s)
-          fi
-          # Set as output
+          # Get the annotated tag message using git log with tag
+          TAG_MESSAGE=$(git log -1 --format=%B "$TAG_NAME" 2>/dev/null || echo "")
           echo "message=$TAG_MESSAGE" >> $GITHUB_OUTPUT
 
       - name: Build and validate

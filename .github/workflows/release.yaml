@@ -22,6 +22,20 @@ jobs:
           go-version: '1.21'
           cache: true
 
+      - name: Get tag message
+        id: tag-message
+        run: |
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          echo "Tag: $TAG_NAME"
+          # Get the annotated tag message
+          TAG_MESSAGE=$(git tag -l "$TAG_NAME" --format='%(contents)' 2>/dev/null || echo "")
+          if [ -z "$TAG_MESSAGE" ]; then
+            echo "No annotated tag message found, using commit message"
+            TAG_MESSAGE=$(git log -1 --pretty=%s)
+          fi
+          # Set as output
+          echo "message=$TAG_MESSAGE" >> $GITHUB_OUTPUT
+
       - name: Build and validate
         run: |
           chmod +x .github/scripts/build.sh
@@ -35,8 +49,10 @@ jobs:
             aospparse-linux-amd64
             aospparse-linux-arm64
             aospparse-darwin-amd64
-            aosppare-darwin-arm64
+            aospparse-darwin-arm64
             aospparse-windows-amd64.exe
-          generate_release_notes: true
+          name: ${{ github.ref_name }}
+          body: ${{ steps.tag-message.outputs.message }}
+          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

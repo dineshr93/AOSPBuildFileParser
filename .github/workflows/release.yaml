@@ -44,6 +44,7 @@ jobs:
           bash .github/scripts/build.sh
 
       - name: Create Release
+        id: create_release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
@@ -56,5 +57,26 @@ jobs:
           name: ${{ github.ref_name }}
           body: ${{ steps.commit-message.outputs.commit_body }}
           generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Release
+        id: update_release
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          RELEASE_ID="${{ steps.create_release.outputs.id }}"
+          echo "Release ID: $RELEASE_ID"
+          echo "Tag: $TAG_NAME"
+          # Get the commit body
+          COMMIT_SHA=$(git rev-list -1 "$TAG_NAME" 2>/dev/null || echo "HEAD")
+          COMMIT_BODY=$(git log -1 --pretty=%b "$COMMIT_SHA" 2>/dev/null || echo "See tag $TAG_NAME for details.")
+          echo "Commit body: $COMMIT_BODY"
+          # Use curl to update the release
+          curl -s -X PATCH \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\":\"$TAG_NAME: Fix syntax error in cmdPaths function\",\"body\":\"$COMMIT_BODY\"}" \
+            "https://api.github.com/repos/dineshr93/AOSPBuildFileParser/releases/$RELEASE_ID" || echo "Failed to update release"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

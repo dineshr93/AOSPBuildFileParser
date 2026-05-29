@@ -27,8 +27,8 @@ jobs:
         run: |
           TAG_NAME="${GITHUB_REF#refs/tags/}"
           echo "Tag: $TAG_NAME"
-          # Get the annotated tag message using git log with tag
-          TAG_MESSAGE=$(git log -1 --format=%B "$TAG_NAME" 2>/dev/null || echo "")
+          # Get the annotated tag message - it's line 4 after "tag <name>"
+          TAG_MESSAGE=$(git show "$TAG_NAME" 2>/dev/null | sed -n '4p' || echo "")
           echo "message=$TAG_MESSAGE" >> $GITHUB_OUTPUT
 
       - name: Build and validate

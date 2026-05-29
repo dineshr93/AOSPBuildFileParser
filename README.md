@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/github/license/dineshr93/AOSPBuildFileParser)](LICENSE)
 [![Releases](https://img.shields.io/github/v/release/dineshr93/AOSPBuildFileParser)](https://github.com/dineshr93/AOSPBuildFileParser/releases)
 
-A comprehensive tool for parsing AOSP (Android Open Source Project) build files (`Android.bp` and `Android.mk`) to build a **central module registry** for **license compliance scanning** (e.g., BlackDuck, Synopsys).
+A comprehensive tool for parsing AOSP (Android Open Source Project) build files (`Android.bp` and `Android.mk`) to build a **central module registry** for **license compliance scanning** (e.g., BlackDuck etc.).
 
 Uses the **official AOSP Soong blueprint parser** and **androidmk parser** — no custom regex-based parsing.
 

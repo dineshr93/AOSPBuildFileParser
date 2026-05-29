@@ -15,6 +15,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.ref }}
+
+      - name: Fetch tag
+        run: |
+          git fetch --tags --force
+          git show-ref --tags | grep "${{ github.ref_name }}" || echo "Tag not found in show-ref"
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -25,11 +31,12 @@ jobs:
       - name: Get tag message
         id: tag-message
         run: |
-          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          TAG_NAME="${{ github.ref_name }}"
           echo "Tag: $TAG_NAME"
           # Get the tag message from git cat-file
           TAG_MESSAGE=$(git cat-file tag "$TAG_NAME" 2>/dev/null | tail -1 || echo "")
           echo "message=$TAG_MESSAGE" >> $GITHUB_OUTPUT
+          echo "Extracted message: $TAG_MESSAGE"
 
       - name: Build and validate
         run: |

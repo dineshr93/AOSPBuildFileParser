@@ -556,7 +556,9 @@ func cmdPaths(args []string) {
 		os.Exit(1)
 	}
 
-		registry := loadRegistry(args[0])\n	globalRegistry = &registry\n	modules := args[1:]
+	registry := loadRegistry(args[0])
+	globalRegistry = &registry
+	modules := args[1:]
 
 	// First resolve all transitive deps
 	visited := make(map[string]bool)

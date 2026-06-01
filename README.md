@@ -1,10 +1,13 @@
-# AOSP Build File Parser
+|# AOSP Build File Parser
+
+[![CI](https://github.com/dineshr93/AOSPBuildFileParser/actions/workflows/ci.yaml)](https://github.com/dineshr93/AOSPBuildFileParser/actions/workflows/ci.yaml)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/dineshr93/AOSPBuildFileParser)](https://github.com/dineshr93/AOSPBuildFileParser)
+[![Releases](https://img.shields.io/github/v/release/dineshr93/AOSPBuildFileParser)](https://github.com/dineshr93/AOSPBuildFileParser/releases)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A production-grade tool for parsing Android.mk and Android.bp build files without requiring a full AOSP build environment.
 
-[![CI](https://github.com/dineshr93/AOSPBuildFileParser/actions/workflows/ci.yaml)](https://github.com/dineshr93/AOSPBuildFileParser/actions/workflows/ci.yaml)
-[![Release](https://github.com/dineshr93/AOSPBuildFileParser/actions/workflows/release.yaml)](https://github.com/dineshr93/AOSPBuildFileParser/actions/workflows/release.yaml)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+Uses the **official AOSP Soong blueprint parser** and **androidmk parser** as fallback, with **static Python parsing** as the primary approach — no custom regex-based parsing for core functionality.
 
 ## Overview
 

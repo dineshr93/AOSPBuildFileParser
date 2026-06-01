@@ -1,4 +1,4 @@
-name: Create Release
+name: Release
 
 on:
   push:
@@ -9,76 +9,99 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up Go
+      - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
-          cache: true
+          check-latest: true
 
-      - name: Get tag version
-        id: version
+      - name: Verify Go version
+        run: go version
+
+      - name: Run tests
+        run: |
+          go test ./... -v -timeout=60s
+        working-directory: .
+
+      - name: Build release binaries
+        run: |
+          GOOS=linux GOARCH=amd64 go build -o aospparse-linux-amd64 .
+          GOOS=darwin GOARCH=amd64 go build -o aospparse-darwin-amd64 .
+          GOOS=darwin GOARCH=arm64 go build -o aospparse-darwin-arm64 .
+          GOOS=windows GOARCH=amd64 go build -o aospparse-windows-amd64.exe .
+          ls -lh aospparse-*
+        working-directory: .
+
+      - name: Get version from tag
+        id: get_version
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
-          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Generate release notes
-        id: releasenotes
-        run: |
-          VERSION=${{ steps.version.outputs.VERSION }}
-          
-          echo "# Release ${VERSION}" > release_notes.md
-          echo "" >> release_notes.md
-          echo "Release Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "This release fixes a syntax error in the cmdPaths function where malformed escape sequences were used instead of actual newlines." >> release_notes.md
-          echo "" >> release_notes.md
-          echo "## Changes" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "### Bug Fixes" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "- Fixed invalid character U+005C (backslash) in main.go line 559" >> release_notes.md
-          echo "- Corrected syntax error with escaped newlines \\n in cmdPaths function" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "## Build Artifacts" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "| Platform | Architecture | File Name |" >> release_notes.md
-          echo "|----------|--------------|-----------|" >> release_notes.md
-          echo "| Linux | amd64 | aospparse-linux-amd64 |" >> release_notes.md
-          echo "| Linux | arm64 | aospparse-linux-arm64 |" >> release_notes.md
-          echo "| macOS | amd64 | aospparse-darwin-amd64 |" >> release_notes.md
-          echo "| macOS | arm64 | aospparse-darwin-arm64 |" >> release_notes.md
-          echo "| Windows | amd64 | aospparse-windows-amd64.exe |" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "## Prerequisites" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "- Go 1.21 or higher" >> release_notes.md
-          echo "" >> release_notes.md
-          
-          echo "=== RELEASE NOTES CONTENT ==="
-          cat release_notes.md
-          echo "=== END RELEASE NOTES ==="
-
-      - name: Build and validate
-        run: |
-          chmod +x .github/scripts/build.sh
-          bash .github/scripts/build.sh
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ steps.version.outputs.VERSION }}
-          body_path: release_notes.md
-          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: Release ${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## Changelog
+            
+            See [CHANGELOG.md](CHANGELOG.md) for full details.
+            
+            ## Installation
+            
+            ### Download Pre-built Binaries
+            
+            Download the appropriate binary for your platform:
+            
+            - Linux: `aospparse-linux-amd64`
+            - macOS (Intel): `aospparse-darwin-amd64`
+            - macOS (Apple Silicon): `aospparse-darwin-arm64`
+            - Windows: `aospparse-windows-amd64.exe`
+            
+            ### Build from Source
+            
+            ```bash
+            git clone https://github.com/dineshr93/AOSPBuildFileParser.git
+            cd AOSPBuildFileParser
+            make build
+            ```
+            
+            ## Usage
+            
+            ```bash
+            # Parse Android.bp
+            ./aospparse extract sample/Android.bp srcs
+            
+            # Parse Android.mk
+            ./aospparse extract sample/Android.mk LOCAL_MODULE
+            
+            # Full scan
+            ./aospparse scan sample > registry.json
+            
+            # Resolve dependencies
+            ./aospparse deps registry.json libsome_module
+            ```
+            
+            ## Sources Parser (No Go Required)
+            
+            For simple Android.mk/Android.bp parsing without Go:
+            
+            ```bash
+            bash sources-parser.sh path/to/Android.bp
+            bash sources-parser.sh path/to/Android.mk
+            ```
+            
+            ## Thanks
+            
+            Thanks for using AOSP Build File Parser!
           files: |
             aospparse-linux-amd64
-            aospparse-linux-arm64
             aospparse-darwin-amd64
             aospparse-darwin-arm64
             aospparse-windows-amd64.exe

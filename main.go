@@ -14,6 +14,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -64,6 +65,8 @@ func main() {
 		cmdDeps(os.Args[2:])
 	case "paths":
 		cmdPaths(os.Args[2:])
+	case "sources":
+		cmdSources(os.Args[2:])
 	case "extract":
 		cmdExtract(os.Args[2:])
 	default:
@@ -80,12 +83,14 @@ Usage:
   aospparse scan   <root_dir>              Scan AOSP tree, output module_registry.json
   aospparse deps   <registry.json> <mods>  Resolve transitive dependencies
   aospparse paths  <registry.json> <mods>  Resolve source file paths
+  aospparse sources <registry.json> <mods> Resolve all sources (with dedup and gather)
   aospparse extract <file> <key>           Extract a property from a single file
 
 Examples:
   aospparse scan ~/aosp > module_registry.json
   aospparse deps module_registry.json libvsomeip3
   aospparse paths module_registry.json libvsomeip3
+  aospparse sources module_registry.json libvsomeip3 --gather --dest /tmp/sources
   aospparse extract Android.bp srcs`)
 }
 
@@ -299,6 +304,7 @@ func resolveExpression(expr bkparser.Expression, variables map[string]bkparser.E
 }
 
 // extractStrings extracts all string values from an expression.
+// Filters out variable substitutions like $(VAR_NAME) which are not valid file paths.
 func extractStrings(expr bkparser.Expression) []string {
 	if expr == nil {
 		return nil
@@ -307,7 +313,9 @@ func extractStrings(expr bkparser.Expression) []string {
 	var strings []string
 	switch v := expr.(type) {
 	case *bkparser.String:
-		return []string{v.Value}
+		if !isVariableReference(v.Value) {
+			strings = append(strings, v.Value)
+		}
 	case *bkparser.List:
 		strings = make([]string, 0, len(v.Values))
 		for _, val := range v.Values {
@@ -321,6 +329,38 @@ func extractStrings(expr bkparser.Expression) []string {
 
 	// Deduplicate
 	return uniqueStrings(strings)
+}
+
+// isVariableReference checks if a string is a variable substitution like $(VAR)
+func isVariableReference(s string) bool {
+	return strings.HasPrefix(s, "$(") && strings.HasSuffix(s, ")")
+}
+
+// expandWildcard attempts to expand $(wildcard ...) patterns
+func expandWildcard(pattern, rootDir string) []string {
+	if !strings.Contains(pattern, "$(wildcard") {
+		return nil
+	}
+
+	// Extract the glob pattern from $(wildcard ...)
+	start := strings.Index(pattern, "$(wildcard")
+	if start == -1 {
+		return nil
+	}
+	end := strings.Index(pattern[start:], ")")
+	if end == -1 {
+		return nil
+	}
+	wildcardPattern := pattern[start+len("$(wildcard") : start+end]
+	wildcardPattern = strings.TrimSpace(wildcardPattern)
+
+	// Expand the glob
+	fullPattern := filepath.Join(rootDir, wildcardPattern)
+	matches, err := filepath.Glob(fullPattern)
+	if err != nil {
+		return nil
+	}
+	return matches
 }
 
 // expressionToJSON converts an expression to a JSON-serializable value.
@@ -599,6 +639,184 @@ func cmdPaths(args []string) {
 }
 
 // ============================================================================
+// SOURCES command - resolve all sources with dedup and gather option
+// ============================================================================
+
+// SourceOutput represents the deduplicated source collection
+type SourceOutput struct {
+	Version    string              `json:"version"`
+	RootDir    string              `json:"root_dir"`
+	Modules    map[string][]string `json:"modules"` // module name -> list of source files
+	AllSources []string            `json:"all_sources"` // deduplicated list of all sources
+}
+
+func cmdSources(args []string) {
+	// Parse flags: --gather and --dest
+	var gather bool
+	var dest string
+
+	// Filter args to separate module names from flags
+	var moduleArgs []string
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--gather" {
+			gather = true
+		} else if args[i] == "--dest" && i+1 < len(args) {
+			dest = args[i+1]
+			i++
+		} else {
+			moduleArgs = append(moduleArgs, args[i])
+		}
+	}
+
+	if len(moduleArgs) < 2 {
+		fmt.Fprintln(os.Stderr, "Usage: aospparse sources <registry.json> <module1> [module2 ...] [--gather] [--dest <path>]")
+		os.Exit(1)
+	}
+
+	registry := loadRegistry(moduleArgs[0])
+	globalRegistry = &registry
+	modules := moduleArgs[1:]
+
+	// Collect all transitive dependencies
+	visited := make(map[string]bool)
+	queue := make([]string, len(modules))
+	copy(queue, modules)
+	allModules := make([]string, 0)
+
+	for len(queue) > 0 {
+		module := queue[0]
+		queue = queue[1:]
+
+		if visited[module] {
+			continue
+		}
+		visited[module] = true
+		allModules = append(allModules, module)
+
+		if info, ok := registry.Modules[module]; ok {
+			for _, dep := range getAllDeps(info) {
+				if !visited[dep] {
+					queue = append(queue, dep)
+				}
+			}
+		}
+	}
+
+	// Build deduplicated source mapping
+	moduleSources := make(map[string][]string)
+	seenSources := make(map[string]bool)
+	allSources := make([]string, 0)
+
+	for _, moduleName := range allModules {
+		if info, ok := registry.Modules[moduleName]; ok {
+			moduleSrcs := make([]string, 0)
+
+			// Expand glob patterns to actual files
+			for _, pattern := range info.Srcs {
+				pathWithDir := filepath.Join(info.Dir, pattern)
+				expanded := expandGlob(pathWithDir, registry.RootDir)
+				for _, file := range expanded {
+					relPath, _ := filepath.Rel(registry.RootDir, file)
+					if !seenSources[relPath] {
+						seenSources[relPath] = true
+						allSources = append(allSources, relPath)
+					}
+					moduleSrcs = append(moduleSrcs, relPath)
+				}
+			}
+
+			moduleSources[moduleName] = moduleSrcs
+		}
+	}
+
+	// Output JSON
+	output := SourceOutput{
+		Version:    "1.0.0",
+		RootDir:    registry.RootDir,
+		Modules:    moduleSources,
+		AllSources: allSources,
+	}
+
+	jsonData, err := json.MarshalIndent(output, "", "  ")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error marshaling JSON: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println(string(jsonData))
+
+	// If --gather flag is set, copy files to dest directory
+	if gather {
+		if dest == "" {
+			fmt.Fprintln(os.Stderr, "Error: --dest is required when using --gather")
+			os.Exit(1)
+		}
+
+		if err := os.MkdirAll(dest, 0755); err != nil {
+			fmt.Fprintf(os.Stderr, "Error creating dest directory: %v\n", err)
+			os.Exit(1)
+		}
+
+		copied := 0
+		for _, src := range allSources {
+			srcPath := filepath.Join(registry.RootDir, src)
+			destPath := filepath.Join(dest, src)
+
+			if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: cannot create dir for %s: %v\n", destPath, err)
+				continue
+			}
+
+			if err := copyFile(srcPath, destPath); err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: cannot copy %s: %v\n", srcPath, err)
+				continue
+			}
+			copied++
+		}
+
+		fmt.Fprintf(os.Stderr, "\nCopied %d files to %s\n", copied, dest)
+	}
+
+	fmt.Fprintf(os.Stderr, "\nTotal unique source files: %d\n", len(allSources))
+	fmt.Fprintf(os.Stderr, "Total modules with sources: %d\n", len(moduleSources))
+}
+
+// expandGlob expands a glob pattern to actual file paths
+// Handles both regular globs and $(wildcard ...) patterns
+func expandGlob(pattern, rootDir string) []string {
+	// First try to expand wildcard patterns
+	if matches := expandWildcard(pattern, rootDir); len(matches) > 0 {
+		return matches
+	}
+
+	// Then try regular glob
+	fullPattern := filepath.Join(rootDir, pattern)
+	matches, err := filepath.Glob(fullPattern)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: glob error for %s: %v\\n", fullPattern, err)
+		return nil
+	}
+	return matches
+}
+
+// copyFile copies a file from src to dest
+func copyFile(src, dest string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	destFile, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, srcFile)
+	return err
+}
+
+// ============================================================================
 // EXTRACT command - legacy single file extraction
 // ============================================================================
 
@@ -611,7 +829,7 @@ func cmdExtract(args []string) {
 	filename := args[0]
 	keyName := args[1]
 
-	_, ext := filepath.Split(filename)
+	ext := filepath.Ext(filename)
 	ext = strings.ToLower(ext)
 
 	switch ext {

@@ -1,4 +1,23 @@
+# Binary output
 aospparse
 aospparse-*
+
+# Go
+go.sum
+*.go.*
+*.mod
+
+# Python
+__pycache__
+*.pyc
+sources-parser.py*
+
+# Test coverage
+coverage*.txt
+
+# IDE
+.idea
+.vscode
+
+# Logs
 *.log
-sample_registry.json

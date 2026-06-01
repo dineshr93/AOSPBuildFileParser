@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  test-go:
+    name: Go Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          check-latest: true
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Verify Go version
+        run: go version
+
+      - name: Run Go tests
+        run: |
+          go test ./... -v -timeout=60s -coverprofile=coverage.txt
+        working-directory: .
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-go
+          path: coverage.txt
+          retention-days: 7
+
+  test-sh:
+    name: Shell Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify Python version
+        run: python3 --version
+
+      - name: Run shell tests
+        run: |
+          bash tests/test_aosp_env.sh
+          bash tests/test_expand_vars.sh
+          bash tests/test_expand_vars2.sh
+          bash tests/test_with_m.sh
+          bash tests/test_with_soong.sh
+        working-directory: .
+
+  test-sources-parser:
+    name: Sources Parser Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify Python version
+        run: python3 --version
+
+      - name: Run sources parser tests
+        run: |
+          bash sources-parser.sh sample/Android.bp
+          bash sources-parser.sh sample/Android.mk
+        working-directory: .
+
+  lint-go:
+    name: Go Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          check-latest: true
+
+      - name: Run gofmt
+        run: |
+          gofmt -l .
+        working-directory: .

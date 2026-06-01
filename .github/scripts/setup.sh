@@ -1,14 +1,27 @@
 #!/bin/bash
+# setup.sh - Setup script for CI/CD environment
 set -e
 
-echo "=== Go version ==="
-go version
+echo "=== CI/CD Setup ==="
 
-echo "=== Initialize module ==="
-go mod init github.com/dineshr93/AOSPBuildFileParser || echo "Module already initialized"
+# Check Go
+echo "Checking Go..."
+go version || { echo "ERROR: Go not found"; exit 1; }
 
-echo "=== Tidy module ==="
-go mod tidy || echo "No dependencies to tidy"
+# Check Python
+echo "Checking Python..."
+python3 --version || { echo "ERROR: Python3 not found"; exit 1; }
 
-echo "=== Build ==="
-go build -v .
+# Check bash
+echo "Checking Bash..."
+bash --version | head -1
+
+# Verify directory structure
+echo "Verifying directory structure..."
+test -d tests || { echo "ERROR: tests directory missing"; exit 1; }
+test -f sources-parser.sh || { echo "ERROR: sources-parser.sh missing"; exit 1; }
+test -f sources-parser.py || { echo "ERROR: sources-parser.py missing"; exit 1; }
+test -f Makefile || { echo "ERROR: Makefile missing"; exit 1; }
+test -f README.md || { echo "ERROR: README.md missing"; exit 1; }
+
+echo "✓ Setup complete"
